@@ -110,7 +110,7 @@ loop = asyncio.get_event_loop()
 
 order_book_running = True
 match_book_running = True
-loop.run_until_complete(asyncio.wait({get_wss_order_book(3),get_wss_match_book(5),compute_spread(1)}))
+loop.run_until_complete(asyncio.wait({get_wss_match_book(2000)}))
 
 def export_match_book(match_book,unit,interval):
 	# Create a list of time intervals containing interval level info as a list: [Weighted_Price_Average,Volume,Interval_Start_Time,N_Transactions]
@@ -147,6 +147,6 @@ def export_match_book(match_book,unit,interval):
 			
 
 # print(order_book)
-export_match_book(match_book,1,5)
+export_match_book(match_book,1,1800)
 
 loop.close()
