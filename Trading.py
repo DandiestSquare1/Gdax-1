@@ -138,11 +138,11 @@ async def compute_spread(unit):
 loop = asyncio.get_event_loop()
 # loop.create_task(get_wss_order_book(5))
 # loop.create_task(get_wss_match_book(5))
-loop.run_until_complete(asyncio.wait({get_wss_order_book(3600*6),get_wss_match_book(),compute_spread(1),compute_spread(30),compute_spread(300)}))
+loop.run_until_complete(asyncio.wait({get_wss_order_book(7200),get_wss_match_book(),compute_spread(1),compute_spread(30)}))
 loop.close()
 
 def export_interval_data():
-	# Create lists of time intervals containing interval level info: (Time, Low, Weighted_Price_Average, High, N_Transactions, Volume, Bid_Index, Ask_Index)
+	# Create lists of time intervals containing interval level info: (Time, Low, Weighted_Price_Average, High, N_Transactions, Volume, Bid_Index, Ask_Index, EMA_12, EMA_26, EMA_DIF, MACD)
 	# If an interval has 0 transaction then the interval list has 0 Volume and the prices is the trailing price
 	# Time is epoch time
 	global match_book,interval_book,Start_Time,End_Time,start_price
@@ -152,7 +152,11 @@ def export_interval_data():
 		
 		trailing_price = start_price
 		match_book_index = 0
+
+		period = 0
+
 		for Time,(Bid_Index,Ask_Index) in interval_book[unit].items():
+			period += 1
 			Amount = 0
 			Volume = 0
 			N_Transactions = 0
@@ -175,7 +179,17 @@ def export_interval_data():
 				High = trailing_price
 				Weighted_Price_Average = trailing_price
 
-			text_file.write("%s,%s,%s,%s,%s,%s,%s,%s\n" % (Time, Low, Weighted_Price_Average, High, N_Transactions, Volume, Bid_Index, Ask_Index))
+			if period == 1:
+				EMA_12 = Weighted_Price_Average
+				EMA_26 = Weighted_Price_Average
+				EMA_DIF = 0
+			else:
+				EMA_12 = (1-2/(12+1)) * EMA_12 + 2/(12+1) * Weighted_Price_Average
+				EMA_26 = (1-2/(26+1)) * EMA_26 + 2/(26+1) * Weighted_Price_Average
+				EMA_DIF = (1-2/(9+1)) * EMA_DIF + 2/(9+1) * (EMA_12 - EMA_26)
+			MACD = EMA_12 - EMA_26 - EMA_DIF
+
+			text_file.write("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % (Time, Low, Weighted_Price_Average, High, N_Transactions, Volume, Bid_Index, Ask_Index, EMA_12, EMA_26, EMA_DIF, MACD))
 		text_file.close()
 			
 export_interval_data()
