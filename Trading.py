@@ -87,9 +87,11 @@ async def get_wss_match_book():
 				))
 
 async def compute_spread(unit):
+	# Expect the formula to produce the spread info to change in the future. Now it's simply giving center prices arbitrary more weight
 	global order_book,order_book_running,Start_Time,End_Time,interval_book,current_price,start_price
 	interval_book[unit] = OrderedDict()
 
+	# Long interval has larger fluctuation
 	if unit <= 1:
 		fluctuation = 0.005
 	elif unit <= 30:
@@ -99,6 +101,8 @@ async def compute_spread(unit):
 	else:
 		fluctuation = 0.1
 
+
+	# Sync with order book, compute spread at the mid moment in the interval
 	while Start_Time == 0:
 		await asyncio.sleep(0.1)
 
@@ -112,6 +116,7 @@ async def compute_spread(unit):
 		Bid_Index = 0
 		Ask_Index = 0
 
+		# Giving price closer to the center more weight
 		Adjusted_Volume = 0
 		for price in order_book.irange(current_price * (1 - fluctuation), current_price, (True,True)):
 			temp = (abs(price - current_price) / current_price / fluctuation + 0.5) * order_book[price]
@@ -138,7 +143,7 @@ loop.close()
 
 def export_interval_data():
 	# Create lists of time intervals containing interval level info: (Time, Low, Weighted_Price_Average, High, N_Transactions, Volume, Bid_Index, Ask_Index)
-	# If an interval has 0 transaction then the interval list has 0 Volume and the price is the trailing price
+	# If an interval has 0 transaction then the interval list has 0 Volume and the prices is the trailing price
 	# Time is epoch time
 	global match_book,interval_book,Start_Time,End_Time,start_price
 
