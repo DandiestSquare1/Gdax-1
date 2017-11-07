@@ -1,0 +1,1 @@
+Time, Low, Weighted_Price_Average, High, N_Transactions, Volume, Bid_Index, Ask_Index
