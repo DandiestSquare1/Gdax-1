@@ -1,1 +1,1 @@
-Time, Low, Weighted_Price_Average, High, N_Transactions, Volume, Bid_Index, Ask_Index
+Time, trailing_price, Low, Weighted_Price_Average, High, close_price, N_Transactions, Volume, Bid_Index, Ask_Index, EMA_12, EMA_26, EMA_DIF, MACD, EMA_Up,EMA_Down,RSI, TSI, EMA_Volume, OBV_Delta
