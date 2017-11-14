@@ -20,8 +20,8 @@ def test(interval,debug = True):
 	order_book = SortedDict()
 	match_book = []
 
-	order_file = open("order_book.txt")
-	match_file = open("match_book.txt")
+	order_file = open("data\order_book.txt")
+	match_file = open("data\match_book.txt")
 	json_message = loads(order_file.readline().replace("'",'"'))
 	max_bid_price = 0
 	min_ask_price = 0
@@ -39,20 +39,6 @@ def test(interval,debug = True):
 	df.sort_values("local_time",inplace = True, kind = 'mergesort')
 	df.reset_index(drop = True, inplace = True)
 
-	df_match = pd.read_csv(match_file, sep = '\t', nrows = n, names = ["type","side","price","volume","server_time","local_time"], usecols = [1,2,3,5])
-	df_match["EMA_12_"] = df_match["price"].ewm(span = 12, adjust =  False).mean()
-
-	test = 0
-	for index,side,price,volume,local_time,ema_12_ in df_match.itertuples():
-		if index == 1:
-			test = price
-		else:
-			test = (1-2/13) * test + 2/13 * price
-
-		print(test)
-
-
-	print(df_match)
 	# df["local_time"] = df["local_time"].map(lambda x: '{0:.17}'.format(x))
 		
 	order_file.close()
@@ -76,7 +62,7 @@ def test(interval,debug = True):
 				interval_volume = round(interval_volume,8)
 				interval_avg_price = round(interval_amount / interval_volume,2)
 
-
+			print(current_time,interval_close_price)
 			EMA_12 = (1-2/(12+1)) * EMA_12 + 2/(12+1) * interval_avg_price
 			EMA_26 = (1-2/(26+1)) * EMA_26 + 2/(26+1) * interval_avg_price
 			EMA_DIF = (1-2/(9+1)) * EMA_DIF + 2/(9+1) * (EMA_12 - EMA_26)
