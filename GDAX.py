@@ -18,6 +18,7 @@ class Product:
 
 
 		self.interval_book = OrderedDict()
+		self.inventory_book = OrderedDict()
 		self.start_price = 0
 		self.current_price = 0
 		self.min_ask_price = 0
@@ -37,15 +38,16 @@ class Product:
 
 			# Initial Snapshot,build order book
 			json_message = loads(await websocket_o.recv())
+			print(json_message)
 
 			for [x,y] in json_message["asks"]:
 				self.order_book[float(x)] = float(y)
-			self.min_ask_price = self.order_book.peekitem(index = 0)[0]
-			self.max_bid_price = self.min_ask_price - 0.01
+				self.min_ask_price = float(x) if min_ask_price == 0 else min_ask_price
 			self.current_price = self.min_ask_price
 			self.start_price = self.current_price
 			for [x,y] in json_message["bids"]:
 				self.order_book[float(x)] = float(y)
+				self.max_bid_price = float(x) if max_bid_price == 0 else max_bid_price
 			
 			# Skip the next type:subscriptions message
 			await websocket_o.recv()
@@ -95,6 +97,10 @@ class Product:
 	async def on_interval(self,interval):
 		# Expect the formula to produce the spread info to change in the future. Now it's simply giving center prices arbitrary more weight
 		self.interval_book[interval] = OrderedDict()
+		self.inventory_book[interval] = {}
+		self.inventory_book[interval]["USD"] = 7000
+		self.inventory_book[interval]["BTC"] = 1
+
 		sign = lambda x: (x>0) - (x<0)
 		# Long interval has larger fluctuation
 		if interval <= 1:
@@ -227,7 +233,18 @@ class Product:
 				EMA_Predict = round((1 - Certainty) * EMA_Predict + Certainty * Predict_Price,2)
 				EMA_Certainty = round((1-2/(9+1)) * EMA_Certainty + 2/(9+1) * Certainty,4)
 
-			print(EMA_Predict,EMA_Certainty,volume_range,sigma)
+			# Buy
+			if (EMA_Predict > self.current_price + 10) and (EMA_Certainty > 0.5):
+				if self.inventory_book[interval]["USD"] > 0:
+					self.inventory_book[interval]["USD"] -= (1 - self.inventory_book[interval]["BTC"])/10 * self.current_price
+					self.inventory_book[interval]["BTC"] += (1 - self.inventory_book[interval]["BTC"])/10
+			# Sell
+			elif (EMA_Predict < self.current_price - 10) and (EMA_Certainty > 0.5):
+				if self.inventory_book[interval]["BTC"] > 0:
+					self.inventory_book[interval]["USD"] += self.inventory_book[interval]["BTC"]/5 * self.current_price
+					self.inventory_book[interval]["BTC"] -= self.inventory_book[interval]["BTC"]/5
+
+			print(EMA_Predict,EMA_Certainty,volume_range,sigma,"-----",round(Bull_Momentum - Bear_Momentum,2), round(EMA_Predict-self.current_price,2),EMA_DIF,MACD, "~~~~~" , self.inventory_book[interval]["USD"], self.inventory_book[interval]["BTC"] ,round(self.inventory_book[interval]["USD"] + self.inventory_book[interval]["BTC"]*self.current_price,2))
 			# self.interval_book[interval][This_Moment] = (This_Moment, open_price, Low, Weighted_Price_Average, High, close_price, Volume, Bid_Price_Index, Ask_Price_Index, EMA_12, EMA_26, EMA_DIF, MACD, EMA_Up,EMA_Down,RSI, TSI, EMA_Volume_9, OBV_Delta)
 			# text_file.write(*self.interval_book[interval][This_Moment],sep = '\t')
 			# print(self.interval_book[interval][This_Moment])
