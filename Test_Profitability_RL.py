@@ -12,7 +12,7 @@ from pprint import pprint
 pd.set_option('display.width', 1000)
 pd.set_option('display.max_rows', 10000)
 pd.set_option('display.max_columns', None)
-def test(interval,debug = True):
+def test(intervals,debug = True):
 	if debug:
 		n = 1000
 	else:
@@ -39,54 +39,56 @@ def test(interval,debug = True):
 		]).reindex(["local_time","book","price","volume","side"],axis = 1)
 	df.sort_values("local_time",inplace = True, kind = 'mergesort')
 	df.reset_index(drop = True, inplace = True)
-	# df["local_time"] -= int(df["local_time"][0])
-
-	# df["local_time"] = df["local_time"].map(lambda x: '{0:.17}'.format(x))
 		
 	order_file.close()
 	match_file.close()
 
 	# current_time is the time at the end of the interval
-	current_time = ceil(df["local_time"][0])
-	interval_volume = 0
-	interval_amount = 0
-	interval_open_price = max_bid_price
-	interval_close_price = max_bid_price
-	interval_avg_price = max_bid_price
-	EMA_12 = max_bid_price
-	EMA_26 = max_bid_price
-	EMA_DIF = 0
+	interval_data = {}
+	for i in intervals:
+		interval_data[i] = {}
+		interval_data[i]["current_time"] = ceil(df["local_time"][0])
+		interval_data[i]["volume"] = 0
+		interval_data[i]["amount"] = 0
+		interval_data[i]["open_price"] = max_bid_price
+		interval_data[i]["close_price"] = max_bid_price
+		interval_data[i]["avg_price"] = max_bid_price
+		interval_data[i]["Volume_Range"] = round(i**0.6 * 5,2)
+		interval_data[i]["EMA_Volume"] = 0
+		interval_data[i]["EMA_12"] = max_bid_price
+		interval_data[i]["EMA_26"] = max_bid_price
+		interval_data[i]["EMA_DIF"] = 0
 
-	recent_volume = 0
-	fluctuation = 0
 
-	deque_1 = deque()
-	deque_test = deque()
 	for index,local_time,book,price,volume,side in df.itertuples():
-		while local_time >= current_time:
-			# End of Interval Calculation
-			if interval_amount > 0:
-				interval_volume = round(interval_volume,8)
-				interval_avg_price = round(interval_amount / interval_volume,2)
+		for interval,data in interval_data.items():
+			while local_time >= data["current_time"]:
+				# End of Interval Calculation
+				if data["amount"] > 0:
+					data["volume"] = round(data["volume"],8)
+					data["avg_price"] = round(data["amount"] / data["volume"],2)
 
-			EMA_12 = (1-2/(12+1)) * EMA_12 + 2/(12+1) * interval_avg_price
-			EMA_26 = (1-2/(26+1)) * EMA_26 + 2/(26+1) * interval_avg_price
-			EMA_DIF = (1-2/(9+1)) * EMA_DIF + 2/(9+1) * (EMA_12 - EMA_26)
-			MACD = EMA_12 - EMA_26 - EMA_DIF
+					if data["volume"] > 0.001:
+						data["EMA_Volume"] = 4/5 * data["EMA_Volume"] + data["volume"] * 3 / 5
+					else:
+						data["EMA_Volume"] = 19/20 * data["EMA_Volume"] + data["Volume_Range"] / 20
 
-			# print(EMA_DIF,MACD,interval_close_price, sep = "\t")
-			# print(fluctuation, current_time, deque_1)
-			# print(sum([y for x,y in deque_1]))
-			print(current_time, interval_volume,sep = "\t")
+				data["EMA_12"] = (1-2/(12+1)) * data["EMA_12"] + 2/(12+1) * data["avg_price"]
+				data["EMA_26"] = (1-2/(26+1)) * data["EMA_26"] + 2/(26+1) * data["avg_price"]
+				data["EMA_DIF"] = (1-2/(9+1)) * data["EMA_DIF"] + 2/(9+1) * (data["EMA_12"] - data["EMA_26"])
+				data["MACD"] = data["EMA_12"] - data["EMA_26"] - data["EMA_DIF"]
 
-			# Initialization for the next interval
-			current_time += interval
-			interval_volume = 0
-			interval_amount = 0
-			interval_low = interval_close_price
-			interval_high = interval_close_price
-			interval_open_price = interval_close_price
-			interval_avg_price = interval_open_price
+				# print(EMA_DIF,MACD,interval_close_price, sep = "\t")
+				print(interval, data["current_time"], data["volume"], data["EMA_Volume"], sep = "\t")
+
+				# Initialization for the next interval
+				data["current_time"] += interval
+				data["volume"] = 0
+				data["amount"] = 0
+				data["low"] = data["close_price"]
+				data["high"] = data["close_price"]
+				data["open_price"] = data["close_price"]
+				data["avg_price"] = data["open_price"]
 
 		# New Order
 		if book == "order":
@@ -102,16 +104,12 @@ def test(interval,debug = True):
 		# New Match
 		else:
 			match_book.append((price, volume, local_time, side))
-			interval_volume += volume
-			interval_amount += volume * price
-			interval_low = min(interval_low,price)
-			interval_high = max(interval_high,price)
-			interval_close_price = price
+			for interval,data in interval_data.items():
+				data["volume"] += volume
+				data["amount"] += volume * price
+				data["low"] = min(data["low"],price)
+				data["high"] = max(data["high"],price)
+				data["close_price"] = price
 
 
-
-
-
-
-
-test(5,False)
+test([1,5,10,30,60],False)
