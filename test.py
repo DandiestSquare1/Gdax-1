@@ -9,7 +9,10 @@ from sortedcontainers import SortedDict
 
 
 def test():
-	match_book_file = open("data\match_book2.txt","w")
-	match_book_file.close()
+	d = deque([1,2])
+	d2 = d.copy()
+	d2.append(3)
+
+	print(d2)
 
 test()

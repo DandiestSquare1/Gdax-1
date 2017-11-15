@@ -8,6 +8,7 @@ from math import ceil
 from time import time
 from collections import OrderedDict,deque
 from sortedcontainers import SortedDict
+from pprint import pprint
 pd.set_option('display.width', 1000)
 pd.set_option('display.max_rows', 10000)
 pd.set_option('display.max_columns', None)
@@ -38,6 +39,7 @@ def test(interval,debug = True):
 		]).reindex(["local_time","book","price","volume","side"],axis = 1)
 	df.sort_values("local_time",inplace = True, kind = 'mergesort')
 	df.reset_index(drop = True, inplace = True)
+	# df["local_time"] -= int(df["local_time"][0])
 
 	# df["local_time"] = df["local_time"].map(lambda x: '{0:.17}'.format(x))
 		
@@ -55,29 +57,36 @@ def test(interval,debug = True):
 	EMA_26 = max_bid_price
 	EMA_DIF = 0
 
+	recent_volume = 0
+	fluctuation = 0
+
+	deque_1 = deque()
+	deque_test = deque()
 	for index,local_time,book,price,volume,side in df.itertuples():
-		if local_time >= current_time:
+		while local_time >= current_time:
 			# End of Interval Calculation
 			if interval_amount > 0:
 				interval_volume = round(interval_volume,8)
 				interval_avg_price = round(interval_amount / interval_volume,2)
 
-			print(current_time,interval_close_price)
 			EMA_12 = (1-2/(12+1)) * EMA_12 + 2/(12+1) * interval_avg_price
 			EMA_26 = (1-2/(26+1)) * EMA_26 + 2/(26+1) * interval_avg_price
 			EMA_DIF = (1-2/(9+1)) * EMA_DIF + 2/(9+1) * (EMA_12 - EMA_26)
 			MACD = EMA_12 - EMA_26 - EMA_DIF
 
+			# print(EMA_DIF,MACD,interval_close_price, sep = "\t")
+			# print(fluctuation, current_time, deque_1)
+			# print(sum([y for x,y in deque_1]))
+			print(current_time, interval_volume,sep = "\t")
 
 			# Initialization for the next interval
+			current_time += interval
 			interval_volume = 0
 			interval_amount = 0
 			interval_low = interval_close_price
 			interval_high = interval_close_price
 			interval_open_price = interval_close_price
 			interval_avg_price = interval_open_price
-			current_time += interval
-			
 
 		# New Order
 		if book == "order":
@@ -100,4 +109,9 @@ def test(interval,debug = True):
 			interval_close_price = price
 
 
-test(10,True)
+
+
+
+
+
+test(5,False)
