@@ -4,6 +4,7 @@ from json import dumps,loads
 from dateutil.parser import parse
 from math import ceil
 from time import time
+from datetime import datetime
 
 class Product:
 	def __init__(self,product_id,time_to_run):
@@ -23,7 +24,7 @@ class Product:
 		async with websockets.connect("wss://ws-feed.gdax.com") as websocket_o:
 			await websocket_o.send(dumps({"type": "subscribe", "product_ids": [self.product], "channels": ["level2"]}))
 
-			text_file = open("order_book.txt", "w",1)
+			text_file = open("data\order_book_%s_%s.txt" % (self.product,datetime.today().strftime('%Y%m%d')), "w",1)
 			# Initial Snapshot,build order book
 			json_message = loads(await websocket_o.recv())
 			text_file.write("%s\n" % (json_message))
@@ -43,7 +44,7 @@ class Product:
 			# Skip the first 2 message
 			await websocket_m.recv()
 			await websocket_m.recv()
-			match_book = open("match_book.txt", "w",1)
+			match_book = open("data\match_book_%s_%s.txt" % (self.product,datetime.today().strftime('%Y%m%d')), "w",1)
 
 			async for message in websocket_m:
 				message = loads(message)
@@ -63,7 +64,8 @@ class GDAX:
 		self.time_to_run = time_to_run
 		self.products = {}
 		self.products["BTC"] = Product("BTC-USD",self.time_to_run+2)
-		# self.products["ETH"] = Product("ETH-USD",self.time_to_run+2)
+		self.products["ETH"] = Product("ETH-USD",self.time_to_run+2)
+		self.products["LTC"] = Product("LTC-USD",self.time_to_run+2)
 
 	def start(self):
 		loop = asyncio.get_event_loop()
