@@ -27,11 +27,9 @@ class Product:
 			# Initial Snapshot,build order book
 			json_message = loads(await websocket_o.recv())
 			text_file.write("%s\n" % (json_message))
-			# print(json_message)
 			await websocket_o.recv()
 			
 			async for message in websocket_o:
-				print(message)
 				side, price, volume = loads(message)["changes"][0]
 				price = float(price)
 				volume = float(volume)
@@ -55,7 +53,6 @@ class Product:
 				size = float(message["size"])
 				servertime = parse(message["time"]).timestamp()
 				localtime = time()
-				print(message)
 				match_book.write("%s\t%s\t%s\t%s\t%s\t%s\n" % (type,side,price,size,servertime,localtime))
 	def run(self,future):
 		asyncio.ensure_future(self.on_match_message())
