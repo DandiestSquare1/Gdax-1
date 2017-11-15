@@ -56,7 +56,7 @@ def test(interval,debug = True):
 	EMA_DIF = 0
 
 	for index,local_time,book,price,volume,side in df.itertuples():
-		if local_time >= current_time:
+		while local_time >= current_time:
 			# End of Interval Calculation
 			if interval_amount > 0:
 				interval_volume = round(interval_volume,8)
