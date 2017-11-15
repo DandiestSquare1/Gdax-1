@@ -1,0 +1,12 @@
+Situation 1: Only dollar in hand.
+	Will only take action to BUY signal.
+	With BUY signal, put bid on (min_ask - 0.01). The bitcoin amount we would like to buy should be min((minimal Unit) * abs(EMA_DIF), dollar_in_hand/current_min_ask_price). 
+	(I propose use 0.001 bitcoin as minimal unit when we start to test. )
+
+Situation 2: Only Bitcoin (cryptocurrency) in hand(We should avoid this situation. It was too risky)
+	Will only take action to SELL signal.
+	With SELL signal, put ask using (max_bid + 0.01). The bitcoin amount we would like to sell should be min((minimal Unit) * abs(EMA_DIF), bitcoin_in_hand)
+
+Situation 3: Partial dollar and partial bitcoin
+	With BUY signal, put bid on (min_ask - 0.01). The bitcoin amount we would like to buy should be min((minimal Unit) * abs(EMA_DIF), dollar_in_hand/current_min_ask_price), left_dollar_in_hand). And then withdraw previous bid.
+	With SELL signal, put ask using (max_bid + 0.01). The bitcoin amount we would like to sell should be min((minimal Unit) * abs(EMA_DIF), bitcoin_in_hand) and then withdraw previous bid.
