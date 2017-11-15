@@ -10,3 +10,20 @@ Situation 2: Only Bitcoin (cryptocurrency) in hand(We should avoid this situatio
 Situation 3: Partial dollar and partial bitcoin
 	With BUY signal, put bid on (min_ask - 0.01). The bitcoin amount we would like to buy should be min((minimal Unit) * abs(EMA_DIF), dollar_in_hand/current_min_ask_price), left_dollar_in_hand). And then withdraw previous bid.
 	With SELL signal, put ask using (max_bid + 0.01). The bitcoin amount we would like to sell should be min((minimal Unit) * abs(EMA_DIF), bitcoin_in_hand) and then withdraw previous bid.
+
+
+RL comments:
+1. dont need to divide it into 3 cases.  it could just be: if there is bitcoin/USD on hand AND with sell/buy signal
+
+2. buy/sell quantity should be a function of signal strength(could be EMA_DIF), and amount of USD/Bitcoin on hand. The more USD we have relatively, the more we want to buy; the more bitcoin we have, the more we want to sell.
+	a. can start with EMA_DIF. Need to add different types of signal strength.
+	b. Signal strength types can be further divided into 2 categories: likelyhood and magnitude. I think EMA_DIF belongs to magnitude
+	c. Consider slope of MACD as it approaches 0. The steeper it is, more likely the expected price movement will happen.
+		i. Need to determine how steep is steep.
+		ii. Also watch for the change of slope: becoming less steep is not a good signal.
+
+3. When you do profitability testing. it's easier to start with a equal value of USD and bitcoin.
+
+4. What we have here is first-step buy/sell logic. Repost logic is more into details. For example, because we receive the data 1s after the transaction actually takes place, we may want to consider send limit order before the price change, so that we when the serve receives the order just moment after price change.
+
+
